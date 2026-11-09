@@ -14,6 +14,8 @@ import {
   ChevronRight,
   Sparkles,
   ArrowRight,
+  ShieldAlert,
+  Radio,
 } from 'lucide-react';
 import {
   Campaign,
@@ -30,6 +32,7 @@ import {
   validateTemplate,
 } from '../utils/templateEngine.ts';
 import { calculateRates } from '../utils/analyticsEngine.ts';
+import { sendGmailMessage } from '../services/gmail.ts';
 
 interface CampaignsViewProps {
   campaigns: Campaign[];
@@ -42,6 +45,10 @@ interface CampaignsViewProps {
   onSelectCampaignForAnalytics: (campaign: Campaign) => void;
   isCreatingNew: boolean;
   setIsCreatingNew: (val: boolean) => void;
+  hasGoogleToken?: boolean;
+  onGoogleSignIn?: () => Promise<void>;
+  getGoogleAccessToken?: () => Promise<string | null>;
+  userEmail?: string;
 }
 
 export const CampaignsView: React.FC<CampaignsViewProps> = ({
@@ -55,12 +62,18 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
   onSelectCampaignForAnalytics,
   isCreatingNew,
   setIsCreatingNew,
+  hasGoogleToken = false,
+  onGoogleSignIn,
+  getGoogleAccessToken,
+  userEmail,
 }) => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [wizardStep, setWizardStep] = useState<number>(1);
   const [activeRunningCampaign, setActiveRunningCampaign] = useState<Campaign | null>(null);
   const [testEmailAddress, setTestEmailAddress] = useState<string>('idlfxa@gmail.com');
-  const [testEmailSentMsg, setTestEmailSentMsg] = useState<string | null>(null);
+  const [testEmailStatus, setTestEmailStatus] = useState<{ message: string; isError?: boolean } | null>(null);
+  const [isSendingTestEmail, setIsSendingTestEmail] = useState<boolean>(false);
+  const [isConfirmingGmailBroadcast, setIsConfirmingGmailBroadcast] = useState<boolean>(false);
 
   // New Campaign Form State
   const [draftCampaign, setDraftCampaign] = useState<Partial<Campaign>>({
@@ -68,13 +81,14 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
     subject: '',
     previewText: '',
     fromName: settings.defaultFromName,
-    fromEmail: settings.defaultFromEmail,
+    fromEmail: userEmail || settings.defaultFromEmail,
     replyTo: settings.defaultReplyTo,
     templateId: templates[0]?.id || '',
     htmlContent: templates[0]?.htmlBody || '',
     plainTextContent: templates[0]?.plainTextBody || '',
     audienceType: 'all',
     sendRate: 5,
+    dispatchProvider: hasGoogleToken ? 'gmail' : 'smtp',
   });
 
   // Runner state
@@ -123,24 +137,80 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
       subject: templates[0]?.subject || '',
       previewText: templates[0]?.previewText || '',
       fromName: settings.defaultFromName,
-      fromEmail: settings.defaultFromEmail,
+      fromEmail: userEmail || settings.defaultFromEmail,
       replyTo: settings.defaultReplyTo,
       templateId: templates[0]?.id || '',
       htmlContent: templates[0]?.htmlBody || '',
       plainTextContent: templates[0]?.plainTextBody || '',
       audienceType: 'all',
       sendRate: 5,
+      dispatchProvider: hasGoogleToken ? 'gmail' : 'smtp',
     });
     setWizardStep(1);
     setIsCreatingNew(true);
   };
 
-  const handleSendTestEmail = () => {
-    setTestEmailSentMsg(`Test email preview simulated to ${testEmailAddress}`);
-    setTimeout(() => setTestEmailSentMsg(null), 4000);
+  const handleSendTestEmail = async () => {
+    if (draftCampaign.dispatchProvider === 'gmail' && hasGoogleToken) {
+      setIsSendingTestEmail(true);
+      setTestEmailStatus(null);
+      try {
+        const token = getGoogleAccessToken ? await getGoogleAccessToken() : null;
+        if (!token) throw new Error('Not authenticated with Google');
+
+        const previewContact = targetContacts[0] || contacts[0] || {
+          name: 'Preview Recipient',
+          firstName: 'Friend',
+          lastName: 'Recipient',
+          company: 'Acme Corp',
+          role: 'VP Marketing',
+          email: testEmailAddress,
+        };
+
+        const varMap: Record<string, string> = {
+          name: previewContact.name,
+          first_name: previewContact.firstName,
+          last_name: previewContact.lastName,
+          company: previewContact.company,
+          role: previewContact.role,
+          email: testEmailAddress,
+          city: previewContact.city || 'San Francisco',
+        };
+
+        const interpolatedSubject = interpolateTemplate(draftCampaign.subject || 'Test Email', varMap);
+        const interpolatedHtml = interpolateTemplate(draftCampaign.htmlContent || '<p>Test</p>', varMap);
+        const interpolatedText = interpolateTemplate(draftCampaign.plainTextContent || 'Test', varMap);
+
+        const res = await sendGmailMessage(token, {
+          to: testEmailAddress,
+          fromName: draftCampaign.fromName || settings.defaultFromName,
+          fromEmail: userEmail || draftCampaign.fromEmail || settings.defaultFromEmail,
+          replyTo: draftCampaign.replyTo || settings.defaultReplyTo,
+          subject: `[TEST] ${interpolatedSubject}`,
+          htmlBody: interpolatedHtml,
+          plainText: interpolatedText,
+        });
+
+        setTestEmailStatus({
+          message: `Live test email delivered to ${testEmailAddress} via Gmail API (Message ID: ${res.id})`,
+        });
+      } catch (err: any) {
+        setTestEmailStatus({
+          message: `Gmail test dispatch failed: ${err.message}`,
+          isError: true,
+        });
+      } finally {
+        setIsSendingTestEmail(false);
+      }
+    } else {
+      setTestEmailStatus({
+        message: `Test email preview simulated to ${testEmailAddress} (SMTP Sandbox)`,
+      });
+    }
+    setTimeout(() => setTestEmailStatus(null), 5000);
   };
 
-  const handleLaunchCampaign = () => {
+  const executeCampaignLaunch = () => {
     if (!draftCampaign.name || !draftCampaign.subject) return;
 
     const newCampaign: Campaign = {
@@ -149,7 +219,7 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
       subject: draftCampaign.subject || 'No Subject',
       previewText: draftCampaign.previewText || '',
       fromName: draftCampaign.fromName || settings.defaultFromName,
-      fromEmail: draftCampaign.fromEmail || settings.defaultFromEmail,
+      fromEmail: draftCampaign.fromEmail || (userEmail || settings.defaultFromEmail),
       replyTo: draftCampaign.replyTo || settings.defaultReplyTo,
       templateId: draftCampaign.templateId,
       htmlContent: draftCampaign.htmlContent || '',
@@ -160,6 +230,7 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
       recipientCount: targetContacts.length,
       sendRate: draftCampaign.sendRate || 5,
       status: 'sending',
+      dispatchProvider: draftCampaign.dispatchProvider || 'smtp',
       startedAt: new Date().toISOString(),
       stats: {
         total: targetContacts.length,
@@ -175,52 +246,135 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
 
     onSaveCampaign(newCampaign);
     setIsCreatingNew(false);
+    setIsConfirmingGmailBroadcast(false);
     setActiveRunningCampaign(newCampaign);
     setRunnerLogs([]);
   };
 
-  // Dispatch Runner Simulation Loop
+  const handleLaunchCampaign = () => {
+    if (!draftCampaign.name || !draftCampaign.subject) return;
+
+    // Workspace guidelines: Mandatory explicit confirmation for mutating/sending operations
+    if (draftCampaign.dispatchProvider === 'gmail') {
+      setIsConfirmingGmailBroadcast(true);
+    } else {
+      executeCampaignLaunch();
+    }
+  };
+
+  // Dispatch Runner Execution Loop (Supports both Gmail API and Sandbox SMTP)
   useEffect(() => {
     if (!activeRunningCampaign || activeRunningCampaign.status !== 'sending') {
-      if (runnerTimerRef.current) clearInterval(runnerTimerRef.current);
+      if (runnerTimerRef.current) clearTimeout(runnerTimerRef.current);
       return;
     }
 
-    const currentCampaign = activeRunningCampaign;
-    const recipients = getTargetContacts(
-      currentCampaign.audienceType,
-      currentCampaign.selectedTag,
-      currentCampaign.selectedStatus
-    );
+    let isCancelled = false;
 
-    const detectedLinks = extractLinks(currentCampaign.htmlContent);
+    const runBatch = async () => {
+      if (isCancelled) return;
+      const current = activeRunningCampaign;
+      if (!current || current.status !== 'sending') return;
 
-    runnerTimerRef.current = setInterval(() => {
-      setActiveRunningCampaign((prev) => {
-        if (!prev || prev.status !== 'sending') return prev;
+      const recipients = getTargetContacts(
+        current.audienceType,
+        current.selectedTag,
+        current.selectedStatus
+      );
 
-        const sentSoFar = prev.stats.sent;
-        if (sentSoFar >= recipients.length) {
-          // Completed!
-          clearInterval(runnerTimerRef.current!);
-          const completed: Campaign = {
-            ...prev,
-            status: 'completed',
-            completedAt: new Date().toISOString(),
+      const sentSoFar = current.stats.sent;
+      if (sentSoFar >= recipients.length) {
+        const completed: Campaign = {
+          ...current,
+          status: 'completed',
+          completedAt: new Date().toISOString(),
+        };
+        setActiveRunningCampaign(completed);
+        onSaveCampaign(completed);
+        return;
+      }
+
+      const batchSize = Math.min(current.sendRate || 2, recipients.length - sentSoFar);
+      const batchContacts = recipients.slice(sentSoFar, sentSoFar + batchSize);
+      const detectedLinks = extractLinks(current.htmlContent);
+
+      const newLogs: EmailDispatchLog[] = [];
+      let newBounces = 0;
+      let newDelivered = 0;
+      let newOpened = 0;
+      let newClicked = 0;
+
+      if (current.dispatchProvider === 'gmail') {
+        const token = getGoogleAccessToken ? await getGoogleAccessToken() : null;
+        for (const contact of batchContacts) {
+          const varMap: Record<string, string> = {
+            name: contact.name,
+            first_name: contact.firstName,
+            last_name: contact.lastName,
+            company: contact.company,
+            role: contact.role,
+            email: contact.email,
+            city: contact.city || '',
           };
-          onSaveCampaign(completed);
-          return completed;
+          const intSubject = interpolateTemplate(current.subject, varMap);
+          const intHtml = interpolateTemplate(current.htmlContent, varMap);
+          const intText = interpolateTemplate(current.plainTextContent, varMap);
+
+          if (!token) {
+            newBounces++;
+            newLogs.push({
+              id: `log-gmail-${Date.now()}-${Math.random()}`,
+              campaignId: current.id,
+              campaignName: current.name,
+              contactId: contact.id,
+              contactEmail: contact.email,
+              contactName: contact.name,
+              status: 'bounced',
+              timestamp: new Date().toISOString(),
+              bounceReason: 'Google Workspace access token expired or not available',
+            });
+          } else {
+            try {
+              const res = await sendGmailMessage(token, {
+                to: contact.email,
+                fromName: current.fromName,
+                fromEmail: current.fromEmail,
+                replyTo: current.replyTo,
+                subject: intSubject,
+                htmlBody: intHtml,
+                plainText: intText,
+              });
+              newDelivered++;
+              newLogs.push({
+                id: `log-gmail-${Date.now()}-${Math.random()}`,
+                campaignId: current.id,
+                campaignName: current.name,
+                contactId: contact.id,
+                contactEmail: contact.email,
+                contactName: contact.name,
+                status: 'delivered',
+                timestamp: new Date().toISOString(),
+                clientType: 'Gmail API (Message ID: ' + res.id + ')',
+                location: 'Google Workspace Network',
+              });
+            } catch (err: any) {
+              newBounces++;
+              newLogs.push({
+                id: `log-gmail-${Date.now()}-${Math.random()}`,
+                campaignId: current.id,
+                campaignName: current.name,
+                contactId: contact.id,
+                contactEmail: contact.email,
+                contactName: contact.name,
+                status: 'bounced',
+                timestamp: new Date().toISOString(),
+                bounceReason: err.message || 'Gmail API transmission error',
+              });
+            }
+          }
         }
-
-        const batchSize = Math.min(prev.sendRate || 2, recipients.length - sentSoFar);
-        const batchContacts = recipients.slice(sentSoFar, sentSoFar + batchSize);
-
-        const newLogs: EmailDispatchLog[] = [];
-        let newBounces = 0;
-        let newDelivered = 0;
-        let newOpened = 0;
-        let newClicked = 0;
-
+      } else {
+        // SMTP Simulation Mode
         const clientList = [
           'Apple Mail 18 (macOS)',
           'Gmail Web (Chrome)',
@@ -231,7 +385,6 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
         const locations = ['San Francisco, US', 'New York, US', 'London, UK', 'Tokyo, JP', 'Berlin, DE'];
 
         batchContacts.forEach((contact) => {
-          // Determine if this contact bounces based on settings.simulatedBounceRate
           const isBounced =
             contact.status === 'bounced' || Math.random() * 100 < settings.simulatedBounceRate;
 
@@ -239,8 +392,8 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
             newBounces++;
             newLogs.push({
               id: `log-${Date.now()}-${Math.random()}`,
-              campaignId: prev.id,
-              campaignName: prev.name,
+              campaignId: current.id,
+              campaignName: current.name,
               contactId: contact.id,
               contactEmail: contact.email,
               contactName: contact.name,
@@ -250,11 +403,8 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
             });
           } else {
             newDelivered++;
-            // Simulate open probability ~65%
             const isOpened = Math.random() < 0.65;
-            // Simulate click probability ~30% if opened
             const isClicked = isOpened && Math.random() < 0.45;
-
             const client = clientList[Math.floor(Math.random() * clientList.length)];
             const loc = locations[Math.floor(Math.random() * locations.length)];
 
@@ -263,8 +413,8 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
               newClicked++;
               newLogs.push({
                 id: `log-${Date.now()}-${Math.random()}`,
-                campaignId: prev.id,
-                campaignName: prev.name,
+                campaignId: current.id,
+                campaignName: current.name,
                 contactId: contact.id,
                 contactEmail: contact.email,
                 contactName: contact.name,
@@ -278,8 +428,8 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
               newOpened++;
               newLogs.push({
                 id: `log-${Date.now()}-${Math.random()}`,
-                campaignId: prev.id,
-                campaignName: prev.name,
+                campaignId: current.id,
+                campaignName: current.name,
                 contactId: contact.id,
                 contactEmail: contact.email,
                 contactName: contact.name,
@@ -291,8 +441,8 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
             } else {
               newLogs.push({
                 id: `log-${Date.now()}-${Math.random()}`,
-                campaignId: prev.id,
-                campaignName: prev.name,
+                campaignId: current.id,
+                campaignName: current.name,
                 contactId: contact.id,
                 contactEmail: contact.email,
                 contactName: contact.name,
@@ -304,32 +454,48 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
             }
           }
         });
+      }
 
-        const updatedStats = {
-          ...prev.stats,
-          sent: prev.stats.sent + batchSize,
-          delivered: prev.stats.delivered + newDelivered,
-          opened: prev.stats.opened + newOpened,
-          clicked: prev.stats.clicked + newClicked,
-          bounced: prev.stats.bounced + newBounces,
+      if (isCancelled) return;
+
+      const updatedStats = {
+        ...current.stats,
+        sent: current.stats.sent + batchSize,
+        delivered: current.stats.delivered + newDelivered,
+        opened: current.stats.opened + newOpened,
+        clicked: current.stats.clicked + newClicked,
+        bounced: current.stats.bounced + newBounces,
+      };
+
+      const updated: Campaign = {
+        ...current,
+        stats: updatedStats,
+      };
+
+      setActiveRunningCampaign(updated);
+      setRunnerLogs((existing) => [...newLogs, ...existing].slice(0, 25));
+      onDispatchEvents(newLogs, updated);
+
+      if (updated.stats.sent < recipients.length) {
+        runnerTimerRef.current = setTimeout(runBatch, 1200);
+      } else {
+        const finished: Campaign = {
+          ...updated,
+          status: 'completed',
+          completedAt: new Date().toISOString(),
         };
+        setActiveRunningCampaign(finished);
+        onSaveCampaign(finished);
+      }
+    };
 
-        const updated: Campaign = {
-          ...prev,
-          stats: updatedStats,
-        };
-
-        setRunnerLogs((existing) => [...newLogs, ...existing].slice(0, 25));
-        onDispatchEvents(newLogs, updated);
-
-        return updated;
-      });
-    }, 1200);
+    runnerTimerRef.current = setTimeout(runBatch, 1000);
 
     return () => {
-      if (runnerTimerRef.current) clearInterval(runnerTimerRef.current);
+      isCancelled = true;
+      if (runnerTimerRef.current) clearTimeout(runnerTimerRef.current);
     };
-  }, [activeRunningCampaign?.id, activeRunningCampaign?.status]);
+  }, [activeRunningCampaign?.id, activeRunningCampaign?.status, activeRunningCampaign?.stats.sent]);
 
   const filteredCampaigns = campaigns.filter(
     (c) => filterStatus === 'all' || c.status === filterStatus
@@ -688,6 +854,88 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
                       />
                     </div>
                   </div>
+
+                  {/* Dispatch Provider Engine Selection */}
+                  <div className="pt-3 border-t border-slate-100">
+                    <label className="block text-xs font-semibold text-slate-700 mb-2">
+                      Dispatch Engine & Delivery Provider
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Gmail API Provider */}
+                      <div
+                        onClick={() => {
+                          setDraftCampaign({
+                            ...draftCampaign,
+                            dispatchProvider: 'gmail',
+                            fromEmail: userEmail || draftCampaign.fromEmail,
+                          });
+                        }}
+                        className={`p-3.5 border rounded-xl cursor-pointer transition-all ${
+                          draftCampaign.dispatchProvider === 'gmail'
+                            ? 'border-sky-600 bg-sky-50/60 ring-1 ring-sky-600'
+                            : 'border-slate-200 hover:border-slate-300 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900">
+                            <Mail className="w-3.5 h-3.5 text-rose-500" />
+                            <span>Google Workspace (Gmail API)</span>
+                          </div>
+                          {draftCampaign.dispatchProvider === 'gmail' && (
+                            <CheckCircle2 className="w-4 h-4 text-sky-600" />
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 mb-2">
+                          Dispatches genuine emails directly from your authenticated Google account inbox.
+                        </p>
+                        {hasGoogleToken ? (
+                          <div className="text-[11px] font-medium text-emerald-700 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            <span>Authenticated as {userEmail || 'Google User'}</span>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onGoogleSignIn) onGoogleSignIn();
+                            }}
+                            className="mt-1 text-[11px] px-2 py-1 bg-white border border-slate-300 hover:bg-slate-50 rounded text-slate-700 font-medium flex items-center gap-1"
+                          >
+                            <span>Connect Google Account</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* SMTP Sandbox Engine */}
+                      <div
+                        onClick={() =>
+                          setDraftCampaign({ ...draftCampaign, dispatchProvider: 'smtp' })
+                        }
+                        className={`p-3.5 border rounded-xl cursor-pointer transition-all ${
+                          draftCampaign.dispatchProvider === 'smtp'
+                            ? 'border-sky-600 bg-sky-50/60 ring-1 ring-sky-600'
+                            : 'border-slate-200 hover:border-slate-300 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900">
+                            <Radio className="w-3.5 h-3.5 text-sky-600" />
+                            <span>SMTP Simulator (Sandbox)</span>
+                          </div>
+                          {draftCampaign.dispatchProvider === 'smtp' && (
+                            <CheckCircle2 className="w-4 h-4 text-sky-600" />
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 mb-2">
+                          Safely test delivery rates, open probability, link clicking, and telemetry simulation.
+                        </p>
+                        <div className="text-[11px] font-medium text-slate-600">
+                          Simulated DKIM &amp; SPF sandbox
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -827,11 +1075,25 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
                       <span className="text-slate-500">Target Recipients:</span>
                       <span className="font-semibold text-slate-900">{targetContacts.length} contacts</span>
                     </div>
-                    <div className="flex justify-between py-1">
+                    <div className="flex justify-between py-1 border-b border-slate-200">
                       <span className="text-slate-500">From Identity:</span>
                       <span className="font-semibold text-slate-900">
                         {draftCampaign.fromName} &lt;{draftCampaign.fromEmail}&gt;
                       </span>
+                    </div>
+                    <div className="flex justify-between items-center py-1">
+                      <span className="text-slate-500">Dispatch Engine:</span>
+                      {draftCampaign.dispatchProvider === 'gmail' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-semibold text-[11px]">
+                          <Mail className="w-3 h-3 text-rose-500" />
+                          <span>Google Workspace (Gmail API)</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-sky-100 text-sky-800 font-semibold text-[11px]">
+                          <Radio className="w-3 h-3 text-sky-600" />
+                          <span>SMTP Simulation Sandbox</span>
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -859,9 +1121,16 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
 
                   {/* Send Test Email Section */}
                   <div className="p-4 bg-white border border-slate-200 rounded-lg space-y-2">
-                    <span className="text-xs font-semibold text-slate-700">
-                      Send Test Email Before Dispatch
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-700">
+                        Send Test Email Before Dispatch
+                      </span>
+                      {draftCampaign.dispatchProvider === 'gmail' && hasGoogleToken && (
+                        <span className="text-[10px] bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded font-medium">
+                          Real Gmail Delivery
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2">
                       <input
                         type="email"
@@ -872,14 +1141,23 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
                       />
                       <button
                         type="button"
+                        disabled={isSendingTestEmail}
                         onClick={handleSendTestEmail}
-                        className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap"
+                        className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 rounded-lg transition-colors whitespace-nowrap"
                       >
-                        Send Test
+                        {isSendingTestEmail ? 'Sending...' : draftCampaign.dispatchProvider === 'gmail' && hasGoogleToken ? 'Send via Gmail' : 'Send Test'}
                       </button>
                     </div>
-                    {testEmailSentMsg && (
-                      <div className="text-xs text-emerald-700 font-medium">{testEmailSentMsg}</div>
+                    {testEmailStatus && (
+                      <div
+                        className={`text-xs font-medium p-2 rounded ${
+                          testEmailStatus.isError
+                            ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                            : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        }`}
+                      >
+                        {testEmailStatus.message}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -912,12 +1190,78 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
                 <button
                   type="button"
                   onClick={handleLaunchCampaign}
-                  className="flex items-center gap-2 px-5 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg shadow-sm transition-colors"
+                  className={`flex items-center gap-2 px-5 py-2 text-xs font-semibold text-white rounded-lg shadow-sm transition-colors ${
+                    draftCampaign.dispatchProvider === 'gmail'
+                      ? 'bg-rose-600 hover:bg-rose-700'
+                      : 'bg-sky-600 hover:bg-sky-700'
+                  }`}
                 >
                   <Send className="w-3.5 h-3.5" />
-                  Launch Live Dispatch
+                  {draftCampaign.dispatchProvider === 'gmail' ? 'Launch Gmail Broadcast' : 'Launch Live Dispatch'}
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mandatory Destructive/Mutating Confirmation Modal for Live Gmail Sending */}
+      {isConfirmingGmailBroadcast && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+          <div className="bg-white rounded-xl shadow-2xl border border-rose-200 max-w-lg w-full p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                <ShieldAlert className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-slate-900">
+                  Confirm Live Gmail API Broadcast
+                </h3>
+                <p className="text-xs text-slate-600">
+                  You are about to dispatch real emails through your connected Google Workspace account.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-1.5">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Recipients Count:</span>
+                <span className="font-semibold text-slate-900">{targetContacts.length} verified contacts</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Sender Account:</span>
+                <span className="font-semibold text-slate-900">{userEmail || draftCampaign.fromEmail}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Campaign Subject:</span>
+                <span className="font-semibold text-slate-900 truncate max-w-[260px]">{draftCampaign.subject}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Delivery Method:</span>
+                <span className="font-semibold text-emerald-700">Real Gmail RFC 2822 Inboxes</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-rose-700 font-medium">
+              Notice: Each recipient will receive this email directly in their personal or work inbox. This action cannot be recalled once dispatched.
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsConfirmingGmailBroadcast(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+              >
+                Cancel &amp; Review
+              </button>
+              <button
+                type="button"
+                onClick={executeCampaignLaunch}
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-sm transition-colors"
+              >
+                <Send className="w-3.5 h-3.5" />
+                Confirm &amp; Send via Gmail
+              </button>
             </div>
           </div>
         </div>

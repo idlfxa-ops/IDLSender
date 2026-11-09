@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Header, NavTab } from './components/Header.tsx';
 import { DashboardView } from './components/DashboardView.tsx';
 import { CampaignsView } from './components/CampaignsView.tsx';
@@ -28,11 +28,30 @@ import {
   SenderSettings,
 } from './types/index.ts';
 
+import { User } from 'firebase/auth';
+import {
+  initAuth,
+  googleSignIn,
+  logout,
+  getAccessToken,
+  setAccessToken,
+} from './services/auth.ts';
+import {
+  fetchGoogleContacts,
+  createGoogleContact,
+  deleteGoogleContact,
+} from './services/googleContacts.ts';
+
 export default function App() {
   // Navigation State
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [selectedCampaignForAnalytics, setSelectedCampaignForAnalytics] = useState<string>('all');
   const [isCreatingCampaign, setIsCreatingCampaign] = useState<boolean>(false);
+
+  // Authentication State
+  const [user, setUser] = useState<User | null>(null);
+  const [hasGoogleToken, setHasGoogleToken] = useState<boolean>(false);
+  const [isSyncingGoogle, setIsSyncingGoogle] = useState<boolean>(false);
 
   // Persistent Domain State
   const [templates, setTemplates] = useState<EmailTemplate[]>(() => {
@@ -79,6 +98,138 @@ export default function App() {
       return initialSettings;
     }
   });
+
+  // Initialize Auth listener on mount
+  useEffect(() => {
+    const unsubscribe = initAuth(
+      (currentUser: User, token: string) => {
+        setUser(currentUser);
+        setHasGoogleToken(!!token);
+      },
+      () => {
+        setUser(null);
+        setHasGoogleToken(false);
+      }
+    );
+    return () => unsubscribe();
+  }, []);
+
+  // Google Sign-In Handler
+  const handleGoogleSignIn = async () => {
+    try {
+      const result = await googleSignIn();
+      if (result) {
+        setUser(result.user);
+        setHasGoogleToken(true);
+        // Automatically fetch and merge contacts on successful login
+        await handleSyncGoogleContacts(result.accessToken);
+      }
+    } catch (error) {
+      console.error('Google Sign-In failed:', error);
+      throw error;
+    }
+  };
+
+  // Google Sign-Out Handler
+  const handleGoogleSignOut = async () => {
+    try {
+      await logout();
+      setUser(null);
+      setHasGoogleToken(false);
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
+
+  // Sync Google Contacts into Audience
+  const handleSyncGoogleContacts = useCallback(
+    async (providedToken?: string) => {
+      const token = providedToken || (await getAccessToken());
+      if (!token) {
+        // Trigger sign in if token is missing
+        await handleGoogleSignIn();
+        return;
+      }
+
+      setIsSyncingGoogle(true);
+      try {
+        const { contacts: fetchedContacts } = await fetchGoogleContacts(token, 100);
+
+        setContacts((prev) => {
+          // Merge by email or googleResourceName
+          const existingMap = new Map<string, Contact>();
+          prev.forEach((c) => existingMap.set(c.email.toLowerCase(), c));
+
+          fetchedContacts.forEach((imported) => {
+            const key = imported.email.toLowerCase();
+            const existing = existingMap.get(key);
+            if (existing) {
+              // Update with Google Contact metadata while keeping existing tags and status
+              existingMap.set(key, {
+                ...existing,
+                name: imported.name || existing.name,
+                firstName: imported.firstName || existing.firstName,
+                lastName: imported.lastName || existing.lastName,
+                company: imported.company !== 'Contact' ? imported.company : existing.company,
+                role: imported.role !== 'Member' ? imported.role : existing.role,
+                city: imported.city || existing.city,
+                tags: Array.from(new Set([...existing.tags, 'Google Contacts'])),
+                googleResourceName: imported.googleResourceName || existing.googleResourceName,
+                googleEtag: imported.googleEtag || existing.googleEtag,
+              });
+            } else {
+              existingMap.set(key, imported);
+            }
+          });
+
+          return Array.from(existingMap.values());
+        });
+      } catch (error) {
+        console.error('Failed to sync Google Contacts:', error);
+        throw error;
+      } finally {
+        setIsSyncingGoogle(false);
+      }
+    },
+    []
+  );
+
+  // Add Google Contact (creates in Google API and adds to local audience)
+  const handleAddGoogleContact = async (contactData: {
+    givenName: string;
+    familyName?: string;
+    email: string;
+    company?: string;
+    role?: string;
+    city?: string;
+  }) => {
+    const token = await getAccessToken();
+    if (!token) {
+      throw new Error('Not authenticated with Google');
+    }
+
+    const created = await createGoogleContact(token, contactData);
+    setContacts((prev) => [created, ...prev]);
+  };
+
+  // Delete Contact (with Google API removal if it was a Google Contact)
+  const handleDeleteContact = async (id: string) => {
+    const target = contacts.find((c) => c.id === id);
+    if (!target) return;
+
+    if (target.googleResourceName) {
+      const token = await getAccessToken();
+      if (token) {
+        try {
+          await deleteGoogleContact(token, target.googleResourceName);
+        } catch (err) {
+          console.warn('Could not delete from Google Contacts API:', err);
+        }
+      }
+    }
+
+    setContacts((prev) => prev.filter((c) => c.id !== id));
+  };
 
   // Sync to localStorage
   useEffect(() => {
@@ -181,10 +332,6 @@ export default function App() {
     setContacts((prev) => [...newContacts, ...prev]);
   };
 
-  const handleDeleteContact = (id: string) => {
-    setContacts((prev) => prev.filter((c) => c.id !== id));
-  };
-
   const handleResetDefaults = () => {
     setTemplates(initialTemplates);
     setContacts(initialContacts);
@@ -206,6 +353,10 @@ export default function App() {
           setIsCreatingCampaign(true);
         }}
         activeSendingCount={activeSendingCount}
+        user={user}
+        hasGoogleToken={hasGoogleToken}
+        onGoogleSignIn={handleGoogleSignIn}
+        onGoogleSignOut={handleGoogleSignOut}
       />
 
       {/* Main Workspace Viewport */}
@@ -238,6 +389,10 @@ export default function App() {
             onSelectCampaignForAnalytics={handleSelectCampaignForAnalytics}
             isCreatingNew={isCreatingCampaign}
             setIsCreatingNew={setIsCreatingCampaign}
+            hasGoogleToken={hasGoogleToken}
+            onGoogleSignIn={handleGoogleSignIn}
+            getGoogleAccessToken={getAccessToken}
+            userEmail={user?.email || undefined}
           />
         )}
 
@@ -257,6 +412,15 @@ export default function App() {
             onAddContact={handleAddContact}
             onBulkAddContacts={handleBulkAddContacts}
             onDeleteContact={handleDeleteContact}
+            user={user}
+            hasGoogleToken={hasGoogleToken}
+            onGoogleSignIn={handleGoogleSignIn}
+            onGoogleSignOut={handleGoogleSignOut}
+            onSyncGoogleContacts={() => handleSyncGoogleContacts()}
+            onAddGoogleContact={handleAddGoogleContact}
+            isSyncingGoogle={isSyncingGoogle}
+            onImportFromGoogleSheets={(imported) => handleBulkAddContacts(imported)}
+            getGoogleAccessToken={getAccessToken}
           />
         )}
 
@@ -266,6 +430,9 @@ export default function App() {
             logs={logs}
             selectedCampaignId={selectedCampaignForAnalytics}
             onSelectCampaignId={setSelectedCampaignForAnalytics}
+            hasGoogleToken={hasGoogleToken}
+            onGoogleSignIn={handleGoogleSignIn}
+            getGoogleAccessToken={getAccessToken}
           />
         )}
 
@@ -287,6 +454,8 @@ export default function App() {
             <span>Bulk Dispatch Architecture & Real-Time Telemetry</span>
           </div>
           <div className="flex items-center gap-4">
+            <span>Google Workspace People API Connected</span>
+            <span aria-hidden="true">·</span>
             <span>DKIM/SPF Compliant</span>
             <span aria-hidden="true">·</span>
             <span>CAN-SPAM Verified</span>

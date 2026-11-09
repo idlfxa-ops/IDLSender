@@ -13,6 +13,8 @@ export interface Contact {
   status: ContactStatus;
   createdAt: string;
   lastSentAt?: string;
+  googleResourceName?: string;
+  googleEtag?: string;
 }
 
 export type TemplateCategory =
@@ -66,6 +68,7 @@ export interface Campaign {
   recipientCount: number;
   sendRate: number; // emails dispatched per batch / tick
   status: CampaignStatus;
+  dispatchProvider?: 'smtp' | 'gmail';
   scheduledAt?: string;
   startedAt?: string;
   completedAt?: string;
