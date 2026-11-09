@@ -1,0 +1,6 @@
+{
+  "name": "RelayPeak - Bulk Email Sender & Analytics",
+  "description": "Production-grade bulk email dispatch platform with responsive email template management, dynamic contact interpolation, and detailed analytics tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
