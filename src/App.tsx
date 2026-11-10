@@ -11,6 +11,20 @@ import { TemplatesView } from './components/TemplatesView.tsx';
 import { AudienceView } from './components/AudienceView.tsx';
 import { AnalyticsView } from './components/AnalyticsView.tsx';
 import { SettingsView } from './components/SettingsView.tsx';
+import { LeadRadarView } from './components/LeadRadarView.tsx';
+import { CrmOnboardingView } from './components/CrmOnboardingView.tsx';
+import { AgencyMilestonesView } from './components/AgencyMilestonesView.tsx';
+import { AutomationsView } from './components/AutomationsView.tsx';
+import { SmsBroadcasterView } from './components/SmsBroadcasterView.tsx';
+import { FormsPopupsView } from './components/FormsPopupsView.tsx';
+import { UnsubscribeModal } from './components/UnsubscribeModal.tsx';
+
+// IDLSender Specific Views
+import { PublicWebsiteView } from './components/idlsender/PublicWebsiteView.tsx';
+import { CustomerAppView } from './components/idlsender/CustomerAppView.tsx';
+import { AdminDashboardView } from './components/idlsender/AdminDashboardView.tsx';
+import { LaravelArchitectureView } from './components/idlsender/LaravelArchitectureView.tsx';
+import { PortalMode } from './types/idlsender.ts';
 
 import {
   initialTemplates,
@@ -18,7 +32,17 @@ import {
   initialCampaigns,
   initialDispatchLogs,
   initialSettings,
+  initialProspects,
+  initialClients,
+  initialMilestones,
 } from './data/seedData.ts';
+
+import {
+  initialWorkflows,
+  initialWorkflowLogs,
+  initialSmsCampaigns,
+  initialSignupForms,
+} from './data/seedSenderNet.ts';
 
 import {
   Campaign,
@@ -26,6 +50,13 @@ import {
   Contact,
   EmailDispatchLog,
   SenderSettings,
+  ProspectLead,
+  AgencyClient,
+  ProjectMilestone,
+  AutomationWorkflow,
+  AutomationExecutionLog,
+  SmsCampaign,
+  SignupForm,
 } from './types/index.ts';
 
 import { User } from 'firebase/auth';
@@ -34,7 +65,6 @@ import {
   googleSignIn,
   logout,
   getAccessToken,
-  setAccessToken,
 } from './services/auth.ts';
 import {
   fetchGoogleContacts,
@@ -43,7 +73,10 @@ import {
 } from './services/googleContacts.ts';
 
 export default function App() {
-  // Navigation State
+  // Master Environment Switcher
+  const [portalMode, setPortalMode] = useState<PortalMode>('app');
+
+  // Navigation State for Legacy/Outreach viewports
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [selectedCampaignForAnalytics, setSelectedCampaignForAnalytics] = useState<string>('all');
   const [isCreatingCampaign, setIsCreatingCampaign] = useState<boolean>(false);
@@ -52,6 +85,12 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [hasGoogleToken, setHasGoogleToken] = useState<boolean>(false);
   const [isSyncingGoogle, setIsSyncingGoogle] = useState<boolean>(false);
+
+  // Unsubscribe & Preference Modal State
+  const [activeUnsubscribeTarget, setActiveUnsubscribeTarget] = useState<{
+    contact?: Contact;
+    client?: AgencyClient;
+  } | null>(null);
 
   // Persistent Domain State
   const [templates, setTemplates] = useState<EmailTemplate[]>(() => {
@@ -99,6 +138,69 @@ export default function App() {
     }
   });
 
+  const [prospects, setProspects] = useState<ProspectLead[]>(() => {
+    try {
+      const saved = localStorage.getItem('relaypeak_prospects');
+      return saved ? JSON.parse(saved) : initialProspects;
+    } catch {
+      return initialProspects;
+    }
+  });
+
+  const [clients, setClients] = useState<AgencyClient[]>(() => {
+    try {
+      const saved = localStorage.getItem('relaypeak_clients');
+      return saved ? JSON.parse(saved) : initialClients;
+    } catch {
+      return initialClients;
+    }
+  });
+
+  const [milestones, setMilestones] = useState<ProjectMilestone[]>(() => {
+    try {
+      const saved = localStorage.getItem('relaypeak_milestones');
+      return saved ? JSON.parse(saved) : initialMilestones;
+    } catch {
+      return initialMilestones;
+    }
+  });
+
+  const [workflows, setWorkflows] = useState<AutomationWorkflow[]>(() => {
+    try {
+      const saved = localStorage.getItem('relaypeak_workflows');
+      return saved ? JSON.parse(saved) : initialWorkflows;
+    } catch {
+      return initialWorkflows;
+    }
+  });
+
+  const [workflowLogs, setWorkflowLogs] = useState<AutomationExecutionLog[]>(() => {
+    try {
+      const saved = localStorage.getItem('relaypeak_workflow_logs');
+      return saved ? JSON.parse(saved) : initialWorkflowLogs;
+    } catch {
+      return initialWorkflowLogs;
+    }
+  });
+
+  const [smsCampaigns, setSmsCampaigns] = useState<SmsCampaign[]>(() => {
+    try {
+      const saved = localStorage.getItem('relaypeak_sms_campaigns');
+      return saved ? JSON.parse(saved) : initialSmsCampaigns;
+    } catch {
+      return initialSmsCampaigns;
+    }
+  });
+
+  const [forms, setForms] = useState<SignupForm[]>(() => {
+    try {
+      const saved = localStorage.getItem('relaypeak_forms');
+      return saved ? JSON.parse(saved) : initialSignupForms;
+    } catch {
+      return initialSignupForms;
+    }
+  });
+
   // Initialize Auth listener on mount
   useEffect(() => {
     const unsubscribe = initAuth(
@@ -121,16 +223,13 @@ export default function App() {
       if (result) {
         setUser(result.user);
         setHasGoogleToken(true);
-        // Automatically fetch and merge contacts on successful login
         await handleSyncGoogleContacts(result.accessToken);
       }
     } catch (error) {
       console.error('Google Sign-In failed:', error);
-      throw error;
     }
   };
 
-  // Google Sign-Out Handler
   const handleGoogleSignOut = async () => {
     try {
       await logout();
@@ -141,52 +240,30 @@ export default function App() {
     }
   };
 
-  // Sync Google Contacts into Audience
   const handleSyncGoogleContacts = useCallback(
     async (providedToken?: string) => {
       const token = providedToken || (await getAccessToken());
-      if (!token) {
-        // Trigger sign in if token is missing
-        await handleGoogleSignIn();
-        return;
-      }
+      if (!token) return;
 
       setIsSyncingGoogle(true);
       try {
         const { contacts: fetchedContacts } = await fetchGoogleContacts(token, 100);
-
         setContacts((prev) => {
-          // Merge by email or googleResourceName
           const existingMap = new Map<string, Contact>();
           prev.forEach((c) => existingMap.set(c.email.toLowerCase(), c));
-
           fetchedContacts.forEach((imported) => {
             const key = imported.email.toLowerCase();
             const existing = existingMap.get(key);
             if (existing) {
-              // Update with Google Contact metadata while keeping existing tags and status
-              existingMap.set(key, {
-                ...existing,
-                name: imported.name || existing.name,
-                firstName: imported.firstName || existing.firstName,
-                lastName: imported.lastName || existing.lastName,
-                company: imported.company !== 'Contact' ? imported.company : existing.company,
-                role: imported.role !== 'Member' ? imported.role : existing.role,
-                city: imported.city || existing.city,
-                tags: Array.from(new Set([...existing.tags, 'Google Contacts'])),
-                googleResourceName: imported.googleResourceName || existing.googleResourceName,
-                googleEtag: imported.googleEtag || existing.googleEtag,
-              });
+              existingMap.set(key, { ...existing, ...imported });
             } else {
               existingMap.set(key, imported);
             }
           });
-
           return Array.from(existingMap.values());
         });
       } catch (error) {
         console.error('Failed to sync Google Contacts:', error);
-        throw error;
       } finally {
         setIsSyncingGoogle(false);
       }
@@ -194,274 +271,98 @@ export default function App() {
     []
   );
 
-  // Add Google Contact (creates in Google API and adds to local audience)
-  const handleAddGoogleContact = async (contactData: {
-    givenName: string;
-    familyName?: string;
-    email: string;
-    company?: string;
-    role?: string;
-    city?: string;
-  }) => {
-    const token = await getAccessToken();
-    if (!token) {
-      throw new Error('Not authenticated with Google');
-    }
-
-    const created = await createGoogleContact(token, contactData);
-    setContacts((prev) => [created, ...prev]);
-  };
-
-  // Delete Contact (with Google API removal if it was a Google Contact)
-  const handleDeleteContact = async (id: string) => {
-    const target = contacts.find((c) => c.id === id);
-    if (!target) return;
-
-    if (target.googleResourceName) {
-      const token = await getAccessToken();
-      if (token) {
-        try {
-          await deleteGoogleContact(token, target.googleResourceName);
-        } catch (err) {
-          console.warn('Could not delete from Google Contacts API:', err);
-        }
-      }
-    }
-
-    setContacts((prev) => prev.filter((c) => c.id !== id));
-  };
-
-  // Sync to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('relaypeak_templates', JSON.stringify(templates));
-    } catch (e) {
-      console.warn('Storage sync error', e);
-    }
-  }, [templates]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('relaypeak_contacts', JSON.stringify(contacts));
-    } catch (e) {
-      console.warn('Storage sync error', e);
-    }
-  }, [contacts]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('relaypeak_campaigns', JSON.stringify(campaigns));
-    } catch (e) {
-      console.warn('Storage sync error', e);
-    }
-  }, [campaigns]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('relaypeak_logs', JSON.stringify(logs));
-    } catch (e) {
-      console.warn('Storage sync error', e);
-    }
-  }, [logs]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('relaypeak_settings', JSON.stringify(settings));
-    } catch (e) {
-      console.warn('Storage sync error', e);
-    }
-  }, [settings]);
-
-  // Handlers for Templates
-  const handleSaveTemplate = (tpl: EmailTemplate) => {
-    setTemplates((prev) => {
-      const idx = prev.findIndex((t) => t.id === tpl.id);
-      if (idx !== -1) {
-        const next = [...prev];
-        next[idx] = tpl;
-        return next;
-      }
-      return [tpl, ...prev];
-    });
-  };
-
-  const handleDeleteTemplate = (id: string) => {
-    setTemplates((prev) => prev.filter((t) => t.id !== id));
-  };
-
-  const handleSelectTemplateForCampaign = (tpl: EmailTemplate) => {
-    setCurrentTab('campaigns');
-    setIsCreatingCampaign(true);
-  };
-
-  // Handlers for Campaigns
-  const handleSaveCampaign = (camp: Campaign) => {
-    setCampaigns((prev) => {
-      const idx = prev.findIndex((c) => c.id === camp.id);
-      if (idx !== -1) {
-        const next = [...prev];
-        next[idx] = camp;
-        return next;
-      }
-      return [camp, ...prev];
-    });
-  };
-
-  const handleUpdateCampaignStatus = (campaignId: string, status: Campaign['status']) => {
-    setCampaigns((prev) =>
-      prev.map((c) => (c.id === campaignId ? { ...c, status } : c))
-    );
-  };
-
-  const handleDispatchEvents = (newLogs: EmailDispatchLog[], updatedCampaign: Campaign) => {
-    setLogs((prev) => [...newLogs, ...prev]);
-    handleSaveCampaign(updatedCampaign);
-  };
-
-  const handleSelectCampaignForAnalytics = (camp: Campaign) => {
-    setSelectedCampaignForAnalytics(camp.id);
-    setCurrentTab('analytics');
-  };
-
-  // Handlers for Audience
-  const handleAddContact = (contact: Contact) => {
-    setContacts((prev) => [contact, ...prev]);
-  };
-
-  const handleBulkAddContacts = (newContacts: Contact[]) => {
-    setContacts((prev) => [...newContacts, ...prev]);
-  };
-
-  const handleResetDefaults = () => {
-    setTemplates(initialTemplates);
-    setContacts(initialContacts);
-    setCampaigns(initialCampaigns);
-    setLogs(initialDispatchLogs);
-    setSettings(initialSettings);
-  };
-
-  const activeSendingCount = campaigns.filter((c) => c.status === 'sending').length;
-
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 antialiased selection:bg-sky-100 selection:text-sky-900">
-      {/* Top Bar adhering to Top Bar Contract */}
-      <Header
-        currentTab={currentTab}
-        onSelectTab={setCurrentTab}
-        onNewCampaign={() => {
-          setCurrentTab('campaigns');
-          setIsCreatingCampaign(true);
-        }}
-        activeSendingCount={activeSendingCount}
-        user={user}
-        hasGoogleToken={hasGoogleToken}
-        onGoogleSignIn={handleGoogleSignIn}
-        onGoogleSignOut={handleGoogleSignOut}
-      />
-
-      {/* Main Workspace Viewport */}
-      <main className="flex-1 px-4 sm:px-6 py-6 sm:py-8 max-w-7xl w-full mx-auto">
-        {currentTab === 'dashboard' && (
-          <DashboardView
-            campaigns={campaigns}
-            contacts={contacts}
-            logs={logs}
-            onNavigate={setCurrentTab}
-            onNewCampaign={() => {
-              setCurrentTab('campaigns');
-              setIsCreatingCampaign(true);
-            }}
-            onSelectCampaign={(camp) => {
-              handleSelectCampaignForAnalytics(camp);
-            }}
-          />
-        )}
-
-        {currentTab === 'campaigns' && (
-          <CampaignsView
-            campaigns={campaigns}
-            templates={templates}
-            contacts={contacts}
-            settings={settings}
-            onSaveCampaign={handleSaveCampaign}
-            onUpdateCampaignStatus={handleUpdateCampaignStatus}
-            onDispatchEvents={handleDispatchEvents}
-            onSelectCampaignForAnalytics={handleSelectCampaignForAnalytics}
-            isCreatingNew={isCreatingCampaign}
-            setIsCreatingNew={setIsCreatingCampaign}
-            hasGoogleToken={hasGoogleToken}
-            onGoogleSignIn={handleGoogleSignIn}
-            getGoogleAccessToken={getAccessToken}
-            userEmail={user?.email || undefined}
-          />
-        )}
-
-        {currentTab === 'templates' && (
-          <TemplatesView
-            templates={templates}
-            contacts={contacts}
-            onSaveTemplate={handleSaveTemplate}
-            onDeleteTemplate={handleDeleteTemplate}
-            onSelectForCampaign={handleSelectTemplateForCampaign}
-          />
-        )}
-
-        {currentTab === 'audience' && (
-          <AudienceView
-            contacts={contacts}
-            onAddContact={handleAddContact}
-            onBulkAddContacts={handleBulkAddContacts}
-            onDeleteContact={handleDeleteContact}
-            user={user}
-            hasGoogleToken={hasGoogleToken}
-            onGoogleSignIn={handleGoogleSignIn}
-            onGoogleSignOut={handleGoogleSignOut}
-            onSyncGoogleContacts={() => handleSyncGoogleContacts()}
-            onAddGoogleContact={handleAddGoogleContact}
-            isSyncingGoogle={isSyncingGoogle}
-            onImportFromGoogleSheets={(imported) => handleBulkAddContacts(imported)}
-            getGoogleAccessToken={getAccessToken}
-          />
-        )}
-
-        {currentTab === 'analytics' && (
-          <AnalyticsView
-            campaigns={campaigns}
-            logs={logs}
-            selectedCampaignId={selectedCampaignForAnalytics}
-            onSelectCampaignId={setSelectedCampaignForAnalytics}
-            hasGoogleToken={hasGoogleToken}
-            onGoogleSignIn={handleGoogleSignIn}
-            getGoogleAccessToken={getAccessToken}
-          />
-        )}
-
-        {currentTab === 'settings' && (
-          <SettingsView
-            settings={settings}
-            onSaveSettings={setSettings}
-            onResetDefaults={handleResetDefaults}
-          />
-        )}
-      </main>
-
-      {/* Clean Footer */}
-      <footer className="border-t border-slate-200 py-6 px-6 bg-white mt-auto">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-700">RelayPeak</span>
-            <span aria-hidden="true">·</span>
-            <span>Bulk Dispatch Architecture & Real-Time Telemetry</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span>Google Workspace People API Connected</span>
-            <span aria-hidden="true">·</span>
-            <span>DKIM/SPF Compliant</span>
-            <span aria-hidden="true">·</span>
-            <span>CAN-SPAM Verified</span>
-          </div>
+    <div className="min-h-screen flex flex-col font-sans">
+      {/* Universal Top-Level Environment Navigation Bar */}
+      <div className="bg-slate-900 border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between text-xs text-slate-300 gap-2 shrink-0">
+        <div className="flex items-center gap-2 font-mono text-[11px]">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="font-bold text-white tracking-tight">IDLSender SaaS Platform</span>
+          <span className="text-slate-400 hidden sm:inline">
+            · Find Leads. Verify Emails. Automate Your Growth.
+          </span>
         </div>
-      </footer>
+
+        {/* Environment Switcher Tabs */}
+        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-[11px] font-semibold">
+          <button
+            onClick={() => setPortalMode('app')}
+            className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
+              portalMode === 'app'
+                ? 'bg-sky-500 text-white font-bold shadow-xs'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <span>⚡ Customer App (app.idlsender.com)</span>
+          </button>
+
+          <button
+            onClick={() => setPortalMode('website')}
+            className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
+              portalMode === 'website'
+                ? 'bg-sky-500 text-white font-bold shadow-xs'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <span>🌐 Website (www.idlsender.com)</span>
+          </button>
+
+          <button
+            onClick={() => setPortalMode('admin')}
+            className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
+              portalMode === 'admin'
+                ? 'bg-red-600 text-white font-bold shadow-xs'
+                : 'text-red-400 hover:text-red-300 hover:bg-slate-800'
+            }`}
+          >
+            <span>🛡️ Super-Admin (admin.idlsender.com)</span>
+          </button>
+
+          <button
+            onClick={() => setPortalMode('laravel_blueprint')}
+            className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
+              portalMode === 'laravel_blueprint'
+                ? 'bg-indigo-600 text-white font-bold shadow-xs'
+                : 'text-indigo-400 hover:text-indigo-300 hover:bg-slate-800'
+            }`}
+          >
+            <span>🐘 Laravel 11 + Kotlin</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Dynamic Portal Viewport */}
+      {portalMode === 'website' && (
+        <PublicWebsiteView
+          onEnterApp={() => setPortalMode('app')}
+          onEnterAdmin={() => setPortalMode('admin')}
+        />
+      )}
+
+      {portalMode === 'admin' && (
+        <AdminDashboardView
+          onBackToApp={() => setPortalMode('app')}
+          onBackToWebsite={() => setPortalMode('website')}
+        />
+      )}
+
+      {portalMode === 'laravel_blueprint' && (
+        <LaravelArchitectureView
+          onBackToApp={() => setPortalMode('app')}
+        />
+      )}
+
+      {portalMode === 'app' && (
+        <CustomerAppView
+          onBackToWebsite={() => setPortalMode('website')}
+          onEnterAdmin={() => setPortalMode('admin')}
+          onOpenArchitecture={() => setPortalMode('laravel_blueprint')}
+          hasGoogleToken={hasGoogleToken}
+          onGoogleSignIn={handleGoogleSignIn}
+          onGoogleSignOut={handleGoogleSignOut}
+          getGoogleAccessToken={getAccessToken}
+        />
+      )}
     </div>
   );
 }

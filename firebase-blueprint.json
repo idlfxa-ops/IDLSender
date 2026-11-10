@@ -1,0 +1,192 @@
+{
+  "entities": {
+    "Client": {
+      "title": "Client",
+      "description": "Agency client profile with onboarding progress and retainer tracking",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "company": { "type": "string" },
+        "role": { "type": "string" },
+        "website": { "type": "string" },
+        "country": { "type": "string" },
+        "region": { "type": "string", "enum": ["USA", "UK", "UAE", "KSA", "Europe"] },
+        "industry": { "type": "string" },
+        "revenueSize": { "type": "string" },
+        "contractValue": { "type": "number" },
+        "monthlyRetainer": { "type": "number" },
+        "services": { "type": "array" },
+        "onboardingStatus": {
+          "type": "string",
+          "enum": [
+            "discovery_contract_signed",
+            "design_wireframing",
+            "development_build",
+            "seo_content_integration",
+            "client_review_qa",
+            "launch_retainer_active"
+          ]
+        },
+        "onboardingProgress": { "type": "number" },
+        "onboardingChecklist": { "type": "array" },
+        "startDate": { "type": "string" },
+        "targetLaunchDate": { "type": "string" },
+        "notes": { "type": "string" },
+        "phone": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "company", "onboardingStatus", "onboardingProgress", "userId"]
+    },
+    "ProspectLead": {
+      "title": "ProspectLead",
+      "description": "High-value business prospect identified and qualified by AI Client Hunter",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "company": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "website": { "type": "string" },
+        "city": { "type": "string" },
+        "country": { "type": "string" },
+        "region": { "type": "string" },
+        "industry": { "type": "string" },
+        "revenueSize": { "type": "string" },
+        "qualificationScore": { "type": "number" },
+        "qualificationStatus": { "type": "string", "enum": ["qualified", "review_needed", "disqualified"] },
+        "qualificationReasons": { "type": "array" },
+        "techDeficitFindings": { "type": "object" },
+        "suggestedOfferings": { "type": "array" },
+        "recommendedAngle": { "type": "string" },
+        "pitchSequence": { "type": "object" },
+        "outreachStatus": {
+          "type": "string",
+          "enum": ["uncontacted", "pitch_generated", "emailed", "replied", "meeting_scheduled", "converted"]
+        },
+        "userId": { "type": "string" },
+        "discoveredAt": { "type": "string" }
+      },
+      "required": ["id", "name", "company", "email", "qualificationScore", "qualificationStatus", "userId"]
+    },
+    "EmailTemplate": {
+      "title": "EmailTemplate",
+      "description": "Reusable outreach and onboarding email templates with dynamic tokens",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "subject": { "type": "string" },
+        "previewText": { "type": "string" },
+        "htmlBody": { "type": "string" },
+        "plainTextBody": { "type": "string" },
+        "variables": { "type": "array" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "subject", "htmlBody", "plainTextBody", "userId"]
+    },
+    "Campaign": {
+      "title": "Campaign",
+      "description": "Bulk email outreach campaigns with throttle settings and real-time statistics",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "subject": { "type": "string" },
+        "previewText": { "type": "string" },
+        "fromName": { "type": "string" },
+        "fromEmail": { "type": "string" },
+        "replyTo": { "type": "string" },
+        "templateId": { "type": "string" },
+        "htmlContent": { "type": "string" },
+        "plainTextContent": { "type": "string" },
+        "audienceType": { "type": "string" },
+        "selectedTag": { "type": "string" },
+        "recipientCount": { "type": "number" },
+        "sendRate": { "type": "number" },
+        "status": { "type": "string" },
+        "dispatchProvider": { "type": "string", "enum": ["smtp", "gmail"] },
+        "stats": { "type": "object" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "subject", "status", "userId"]
+    },
+    "EmailDeliveryReport": {
+      "title": "EmailDeliveryReport",
+      "description": "Telemetry reports tracking delivery, opens, clicks, client user-agents, and bounce reasons",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "campaignId": { "type": "string" },
+        "campaignName": { "type": "string" },
+        "contactId": { "type": "string" },
+        "contactEmail": { "type": "string" },
+        "contactName": { "type": "string" },
+        "status": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "clientType": { "type": "string" },
+        "location": { "type": "string" },
+        "clickedLinks": { "type": "array" },
+        "bounceReason": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "campaignId", "contactEmail", "status", "timestamp", "userId"]
+    },
+    "ProjectMilestone": {
+      "title": "ProjectMilestone",
+      "description": "Agency client deliverable milestones across design, development, SEO, and maintenance",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientCompany": { "type": "string" },
+        "serviceCategory": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "stage": { "type": "string", "enum": ["backlog", "in_progress", "review", "completed"] },
+        "dueDate": { "type": "string" },
+        "assignee": { "type": "string" },
+        "deliverableLink": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "clientId", "title", "stage", "userId"]
+    }
+  },
+  "firestore": {
+    "/clients/{clientId}": {
+      "schema": { "$ref": "#/entities/Client" },
+      "description": "Client records with onboarding status, contact info, contract size, and checklist"
+    },
+    "/prospects/{prospectId}": {
+      "schema": { "$ref": "#/entities/ProspectLead" },
+      "description": "Identified and qualified high-value prospective clients"
+    },
+    "/templates/{templateId}": {
+      "schema": { "$ref": "#/entities/EmailTemplate" },
+      "description": "Outreach and onboarding email templates"
+    },
+    "/campaigns/{campaignId}": {
+      "schema": { "$ref": "#/entities/Campaign" },
+      "description": "Bulk email dispatch campaigns"
+    },
+    "/deliveryReports/{reportId}": {
+      "schema": { "$ref": "#/entities/EmailDeliveryReport" },
+      "description": "Delivery, open, and click tracking reports"
+    },
+    "/milestones/{milestoneId}": {
+      "schema": { "$ref": "#/entities/ProjectMilestone" },
+      "description": "Agency deliverable milestones and task timelines"
+    }
+  }
+}

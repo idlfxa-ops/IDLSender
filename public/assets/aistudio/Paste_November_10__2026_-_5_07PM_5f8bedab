@@ -1,0 +1,935 @@
+I am working for email marketing, my website is IDLSender, i want to add this website snov.io in my website, please add its all functions as well, please write complete blue print for my website "IDLSender" & App "IDLSender App" to build it by https://aistudio.google.com/
+Worked for 52s
+Complete IDLSender Website & App Blueprint
+IDLSender
+Email Marketing & Sales Automation Platform
+Website + Web Application + Mobile Application
+My recommendation is to develop IDLSender as an independent SaaS platform inspired by the functionality of Snov.io, with your own branding, user interface, database, backend, and technology.
+The objective is to make IDLSender an all-in-one platform where businesses can:
+•	Find business contacts and B2B leads.
+•	Discover and verify professional email addresses.
+•	Build and manage email lists.
+•	Create email marketing campaigns.
+•	Automate cold email outreach and follow-ups.
+•	Find prospects through LinkedIn-oriented workflows.
+•	Manage sales pipelines and CRM contacts.
+•	Track campaign performance.
+•	Manage multiple email accounts.
+•	Use AI to write emails and discover potential customers.
+I recommend building the platform in PHP Laravel + MySQL, with a responsive web application and a separate mobile app. This also follows the Laravel/MySQL technology direction you've used for your other web projects.
+One important distinction: we should reproduce the publicly available product capabilities as independently developed features, not copy Snov.io's proprietary source code, branding, or private systems.
+1. Product vision and modules
+The following is the proposed IDLSender feature set, based on Snov.io's current product categories, including its prospecting, enrichment, outreach, CRM, deliverability, teamwork and API capabilities. 
+Snov.io+2
+Wiza design system | Refero Styles
+1. IDL Lead Finder
+•	Domain email finder
+•	Company search
+•	Person and job-title search
+•	Bulk domain search
+•	Contact enrichment
+•	Company information
+•	CSV/XLSX import and export
+•	Prospect lists and saved searches
+Email Verification Tool & Email Tester | EasyDMARC
+2. IDL Email Verifier
+•	Single email verification
+•	Bulk email verification
+•	Syntax validation
+•	Domain and DNS checks
+•	MX record checks
+•	SMTP verification where supported
+•	Disposable email detection
+•	Catch-all detection
+•	Risk and confidence scores
+•	Verification history
+No-Code Email Campaign Flow Builder by Szymon Jędrusik on Dribbble
+3. IDL Email Campaigns
+•	Drag-and-drop email builder
+•	HTML email editor
+•	Campaign scheduling
+•	Automated email sequences
+•	Follow-up automation
+•	Conditional workflows
+•	Personalization variables
+•	A/B testing
+•	Multiple sender accounts
+•	Campaign pause and resume
+Affordable Email Marketing Tool | Leadnest.ai
+4. IDL Deliverability Center
+•	SPF, DKIM and DMARC checker
+•	DNS health checker
+•	Domain reputation monitoring
+•	Blacklist checks
+•	Spam-word checker
+•	Email placement tests
+•	Bounce monitoring
+•	Complaint monitoring
+•	Sending limits
+•	Deliverability recommendations
+ByteBit Software Design | Odoo Partner & IT Solutions in UAE
+5. IDL Sales CRM
+•	Contact management
+•	Companies and organizations
+•	Leads and opportunities
+•	Deal pipelines
+•	Tasks and reminders
+•	Notes and activity history
+•	Sales stages
+•	Follow-up reminders
+•	Team assignment
+AI Marketing Tools: Boost Email Personalization & Growth
+6. IDL AI Assistant
+•	AI email writer
+•	Subject-line generator
+•	Email rewriting
+•	Grammar correction
+•	Translation
+•	Tone adjustment
+•	Personalized email generation
+•	Lead research assistance
+•	Company summaries
+•	Campaign performance suggestions
+Additional advanced features
+Module	Functionality
+IDL Unibox	Unified inbox for connected mailboxes
+IDL Enrichment	Company, contact and job information
+IDL LinkedIn Tools	Prospect research and compliant manual workflows
+IDL Warm-up	Mailbox readiness and deliverability monitoring
+IDL Chrome Extension	Find and save prospect information from permitted pages
+IDL Integrations	Gmail, Outlook, HubSpot, Pipedrive, Zapier and Make
+IDL API	REST API and webhooks
+IDL Teamwork	Team members, permissions and shared lists
+IDL Analytics	Campaign, contact and sales reports
+IDL Templates	Reusable email templates and sequences
+Important: LinkedIn automation should not imitate human activity or perform prohibited scraping. Use permitted integrations and user-controlled workflows. Likewise, email warm-up must use legitimate, authorized infrastructure rather than fabricated engagement.
+2. Website structure – IDLSender.com
+I recommend two separate experiences under one brand:
+•	Public marketing website: www.idlsender.com
+•	Customer application: app.idlsender.com
+Flowdesk — Email Marketing & Automation SaaS Platform Website UI by Trakshym LLP on Dribbble
+dribbble.com
+Public website pages
+Page	Content
+Home	Main landing page, features and benefits
+Email Finder	Contact discovery features
+Email Verifier	Email verification features
+Email Campaigns	Email marketing automation
+Cold Outreach	Outreach workflow and follow-ups
+Email Deliverability	Deliverability tools
+Sales CRM	CRM and deal management
+AI Email Writer	AI writing tools
+Integrations	Supported third-party services
+API & Developers	API documentation
+Pricing	Subscription plans
+About Us	Company information
+Contact Us	Contact form and support
+Blog	Email marketing guides
+Help Center	Tutorials and FAQs
+Login	Customer login
+Register	New account registration
+Homepage design
+Best B2B & B2C Email Marketing Tools for Scalable Growth
+instantly.ai
+Hero heading:
+"Find Leads. Verify Emails. Automate Your Growth."
+Subheading:
+"IDLSender is your all-in-one email marketing and sales automation platform. Discover business contacts, verify email addresses, launch personalized campaigns and grow your business with intelligent automation."
+Primary buttons:
+•	Start Free
+•	Explore Features
+Below the hero:
+1.	Trusted by businesses section.
+2.	Main product features.
+3.	How IDLSender works.
+4.	Lead generation demonstration.
+5.	Email campaign demonstration.
+6.	AI assistant demonstration.
+7.	Integrations.
+8.	Pricing plans.
+9.	Customer testimonials (only genuine testimonials).
+10.	Frequently asked questions.
+11.	Final call to action.
+3. IDLSender App – Complete dashboard
+This is the main application that customers will use after logging in.
+Email Marketing SaaS Dashboard UIUX by ilias miah ✪ Hire Now on Dribbble
+dribbble.com
+Main navigation sidebar
+IDLSender
+App concept
+Dashboard
+Lead Finder
+Email Verifier
+Prospects & Lists
+Email Campaigns
+Automation Builder
+Unibox
+Email Accounts
+Deliverability
+AI Assistant
+Analytics & Reports
+Sales CRM
+Integrations
+API & Webhooks
+Team Management
+Billing & Credits
+Settings
+Dashboard widgets
+The first screen after login should contain:
+•	Total contacts
+•	Verified emails
+•	Invalid emails
+•	Active campaigns
+•	Emails sent
+•	Emails delivered
+•	Bounce rate
+•	Replies received
+•	Unsubscribe count
+•	Open rate, where tracking is enabled
+•	Click rate, where tracking is enabled
+•	New leads this month
+Email Marketing Analytics Dashboard 📧📊 by Nexila - UI/UX Design & Development Partner on Dribbble
+dribbble.com
+Include date filters: Today, Yesterday, Last 7 Days, Last 30 Days, This Month and Custom Range.
+3.1 Lead Finder
+Hunter Discover: Generate B2B leads at scale • Hunter
+hunter.io
+Search filters:
+•	Person's first and last name
+•	Business email
+•	Company name
+•	Company website/domain
+•	Country
+•	City
+•	Industry
+•	Job title
+•	Department
+•	Company size
+•	Company revenue range
+•	LinkedIn profile URL
+•	Technology used by company
+Search results should display:
+Field	Example
+Name	John Smith
+Company	ABC Technologies
+Job Title	Marketing Manager
+Domain	example.com
+Email	john@example.com
+Verification	Verified / Risky / Unknown
+Source	Provider/source reference
+Add actions: Save Contact, Add to List, Verify Email, Export CSV.
+Data sourcing: Use licensed B2B data providers, authorized sources, user-provided data and permitted public sources. Every record should include source and collection date where available. Do not promise that every discovered address is accurate.
+3.2 Email Verifier
+Bulk Email Verification
+heybounce.io
+Provide:
+•	Single email verification.
+•	Bulk CSV upload.
+•	Bulk verification queue.
+•	Verification progress.
+•	Results download.
+•	Duplicate removal.
+Status categories:
+Valid
+Invalid
+Risky
+Catch-all
+Unknown
+The verification engine should use multiple checks, not merely a regex, and must clearly distinguish a technically valid address from permission to send marketing emails.
+3.3 Prospects and contact management
+Features:
+•	Create unlimited lists subject to subscription limits.
+•	Import contacts from CSV and Excel.
+•	Export contacts.
+•	Add custom fields.
+•	Create custom tags.
+•	Filter contacts.
+•	Merge duplicates.
+•	Bulk update records.
+•	Delete contacts.
+•	Manage unsubscribed and suppressed contacts.
+3.4 Email campaign builder
+Brevo: Email & SMS Marketing, CRM & Automation Platform
+brevo.com
+Email campaign workflow:
+1. Select Audience
+Choose a contact list or filtered segment
+2. Create Email
+Subject, content, design and personalization
+3. Configure Sending
+Sender, schedule, sending limits and compliance
+4. Preview and Test
+Desktop, mobile and test email
+5. Launch Campaign
+Send, schedule or save as draft
+6. Analyze Results
+Delivery, bounces, replies, clicks and unsubscribes
+3.5 Automation Builder
+Add a conditional split to an automation based on contact details and behavior – Home
+help.brevo.com
+Customers should be able to create workflows such as:
+•	New subscriber → Welcome email.
+•	Contact added → Send introduction.
+•	No reply after 3 days → Follow-up.
+•	Link clicked → Add tag.
+•	Contact unsubscribed → Suppress future marketing.
+•	Contact replies → Stop automated sequence.
+•	High bounce rate → Pause campaign and notify administrator.
+Provide visual drag-and-drop nodes:
+Trigger → Condition → Delay → Action → Condition → Action
+3.6 Email accounts and Unibox
+Support authorized connections through:
+•	Gmail / Google Workspace OAuth.
+•	Microsoft 365 OAuth.
+•	SMTP and IMAP for compatible providers.
+Functions:
+•	Connect multiple sender accounts.
+•	Check connection health.
+•	Set sending schedules and limits.
+•	View replies in one inbox.
+•	Reply and forward.
+•	Assign conversations to team members.
+•	Add notes and tags.
+•	Stop campaign follow-ups after a reply.
+3.7 AI Assistant
+The AI assistant should be available throughout the application.
+Example commands:
+•	"Find marketing agencies in the USA."
+•	"Write a professional introduction email."
+•	"Improve this email subject."
+•	"Translate this campaign into German."
+•	"Create a three-step follow-up sequence."
+•	"Summarize my last campaign."
+•	"Find contacts missing company information."
+Use Google's Gemini API through secure server-side calls. Require human review before AI-generated messages are sent.
+4. IDLSender App – Mobile application
+I recommend an Android app first, followed by iOS.
+Email Marketing Automation SaaS | Web App UI UX :: Behance
+iPhone email marketing app - MailerLite
+Introducing a New Mobile Dashboard | Mailchimp
+8
+Application name: IDLSender App
+Mobile app features:
+1.	Secure login and registration.
+2.	Dashboard and campaign statistics.
+3.	Contacts and lead lists.
+4.	Search and view prospects.
+5.	Email verification requests.
+6.	Campaign monitoring.
+7.	Pause/resume campaigns.
+8.	Unified inbox and replies.
+9.	AI email writing assistant.
+10.	Push notifications.
+11.	Billing and subscription management.
+12.	Profile and account settings.
+The mobile app should connect to the same Laravel backend and database as the website. It should not have a separate contact database.
+5. Admin Panel – IDLSender Super Admin
+You need a separate super-admin dashboard to manage the entire SaaS business.
+Subscription Management SaaS Dashboard (3) | Images :: Behance
+behance.net
+Admin modules
+Module	Admin capabilities
+Dashboard	Revenue, users, campaigns, system health
+Users	Create, suspend, verify and manage accounts
+Subscriptions	Plans, upgrades, renewals and cancellations
+Credits	Allocate, deduct and refund credits
+Email Providers	Manage sending integrations
+Lead Providers	Configure licensed data providers
+Verification Engine	Manage verification services
+Campaigns	Monitor queues and sending health
+AI Settings	Gemini configuration and usage limits
+Email Templates	Global templates
+Support	Tickets and customer inquiries
+Transactions	Payment records and invoices
+API Management	API keys, rate limits and logs
+Team Management	Staff roles and permissions
+CMS	Homepage, pricing, blog and FAQs
+System Settings	Branding, SMTP, DNS and application settings
+Security	Audit logs, login history and access control
+Admin dashboard statistics
+•	Total registered customers.
+•	Active subscriptions.
+•	Monthly recurring revenue (MRR).
+•	New registrations.
+•	Total contacts stored.
+•	Total verification requests.
+•	Total campaign emails sent.
+•	Email delivery failures.
+•	Total AI requests.
+•	Server and queue status.
+The administrator must never be able to see customers' mailbox passwords or private OAuth tokens in readable form.
+6. Technology stack and architecture
+This is an important decision for your project.
+Recommended IDLSender architecture
+IDLSender Public Website
+www.idlsender.com
+IDLSender Web Application
+app.idlsender.com
+IDLSender Android App
+Kotlin + Jetpack Compose
+Laravel REST API Backend
+Authentication · Business Logic · Billing · Permissions
+MySQL
+Main database
+Redis
+Cache and queues
+Queue Workers
+Campaign processing
+Object Storage
+Files and exports
+External Services
+Gemini · Gmail · Microsoft · Email providers · Payment gateways · Data providers
+Recommended technologies
+Component	Technology
+Backend	PHP Laravel
+Database	MySQL
+Frontend	Laravel Blade + Livewire or React
+UI	Tailwind CSS
+Mobile Android	Kotlin + Jetpack Compose
+API	Laravel REST API
+Authentication	Laravel Sanctum / OAuth
+Cache	Redis
+Background jobs	Laravel Queues
+Realtime	Laravel Reverb
+AI	Google Gemini API
+Email delivery	SMTP / provider APIs
+File storage	S3-compatible storage
+Payments	Stripe / PayPal / suitable local gateway
+Hosting	VPS or suitable cloud infrastructure
+My recommendation: Use Laravel as the single source of truth. Build the customer dashboard and admin panel on the Laravel backend, expose API endpoints for the Android application, and keep all business rules on the server.
+Important Google AI Studio limitation
+Google AI Studio Build Mode currently generates web applications using React on the frontend and Node.js on the backend. It also supports native Android applications using Kotlin and Jetpack Compose. 
+Google AI for Developers+1
+Therefore, for your Laravel requirement:
+1.	Use Google AI Studio to design and generate the website and application UI.
+2.	Export or sync the generated project through GitHub.
+3.	Implement or port the production backend into Laravel + MySQL.
+4.	Build the Android client using Kotlin and connect it to Laravel REST APIs.
+Do not accidentally let AI Studio turn the entire production backend into a Node.js application if your final requirement is Laravel.
+7. Database architecture
+Create a multi-tenant SaaS database. Each customer must only access their own records.
+Recommended database tables:
+Table	Purpose
+users	User accounts
+organizations	Customer organizations
+organization_users	Team membership
+roles	User roles
+permissions	Access permissions
+subscriptions	Subscription records
+plans	Pricing plans
+transactions	Payments
+credit_wallets	Customer credit balance
+credit_transactions	Credit usage history
+contacts	Customer contacts
+companies	Business information
+contact_lists	Saved lists
+contact_list_members	List membership
+contact_custom_fields	Custom fields
+email_verifications	Verification results
+email_campaigns	Campaign information
+campaign_steps	Email sequence steps
+campaign_recipients	Campaign recipients
+campaign_events	Opens, clicks, replies and bounces
+email_accounts	Connected sender accounts
+email_messages	Message records
+email_templates	Reusable templates
+automation_workflows	Automation definitions
+automation_nodes	Workflow nodes
+automation_executions	Workflow execution logs
+conversations	Unified inbox threads
+deals	CRM opportunities
+tasks	Sales tasks
+ai_requests	AI usage tracking
+api_keys	Customer API credentials
+webhooks	Webhook configurations
+suppressions	Unsubscribed and do-not-contact records
+consent_records	Permission and consent history
+audit_logs	Security and activity logs
+support_tickets	Customer support
+Database requirements
+•	Every customer-owned record should include organization_id.
+•	Apply tenant-level authorization on every query.
+•	Use foreign keys and appropriate indexes.
+•	Encrypt sensitive mailbox credentials and tokens.
+•	Store dates in UTC and display them in the customer's timezone.
+•	Keep an audit trail for important operations.
+•	Never store passwords in plain text.
+•	Prevent one organization's API key from accessing another organization's information.
+8. Email sending infrastructure
+This is one of the most important parts of IDLSender.
+You cannot build a professional email marketing platform simply by adding an SMTP form. You need a reliable email delivery architecture.
+Mail Transfer Agent Software: The 2025 Architecture Guide | Transmit
+xmit.sh
+Supported providers
+Consider integrations with:
+•	Amazon SES
+•	SendGrid
+•	Mailgun
+•	Brevo
+•	Postmark
+•	Gmail / Google Workspace
+•	Microsoft 365
+•	Custom SMTP providers
+Sending engine
+The sending process should be:
+1.	Customer creates a campaign.
+2.	System checks subscription and available credits.
+3.	System checks audience permissions and suppression lists.
+4.	System validates sender configuration.
+5.	Campaign enters the queue.
+6.	Laravel workers process batches.
+7.	Provider sends the messages.
+8.	Webhooks report delivery events.
+9.	Dashboard updates campaign statistics.
+Essential deliverability controls
+•	SPF verification.
+•	DKIM verification.
+•	DMARC verification.
+•	Bounce processing.
+•	Complaint processing.
+•	Unsubscribe processing.
+•	Domain reputation checks.
+•	Provider-specific rate limits.
+•	Sending quotas.
+•	Automatic campaign suspension when thresholds are exceeded.
+Use a clearly visible unsubscribe link in marketing emails and automatically suppress recipients who unsubscribe. Support permission-based marketing and applicable privacy and anti-spam laws, including GDPR, CAN-SPAM, CASL and relevant local requirements.
+Important business decision: Separate permission-based marketing campaigns from individually managed B2B sales outreach. Apply appropriate legal requirements to each. Do not allow purchased, scraped or otherwise unauthorized lists to bypass consent and suppression checks.
+9. Subscription plans and credit system
+I recommend a freemium SaaS model.
+Here is an initial pricing proposal, not a claim about Snov.io's actual prices.
+Free Plan
+$0
+•	Limited contact storage
+•	Basic email verification
+•	One campaign
+•	Basic reporting
+•	Limited AI requests
+Starter Plan
+$9 / month
+•	More contact storage
+•	Email finder credits
+•	Bulk verification
+•	Email campaigns
+•	Basic automation
+•	Email support
+Recommended
+Professional Plan
+$25 / month
+•	Advanced lead discovery
+•	More verification credits
+•	Multiple sender accounts
+•	Advanced campaigns
+•	Automation builder
+•	AI writing assistant
+•	CRM and analytics
+Business Plan
+$49 / month
+•	Team management
+•	Higher usage limits
+•	Advanced analytics
+•	API and webhooks
+•	Advanced CRM
+•	Integrations
+•	Priority support
+Enterprise Plan
+Custom pricing
+•	Custom credits and limits
+•	Dedicated infrastructure options
+•	Custom integrations
+•	Advanced permissions
+•	Dedicated support
+Credit types
+Keep separate balances for:
+1.	Lead search credits.
+2.	Email verification credits.
+3.	Enrichment credits.
+4.	Campaign recipients.
+5.	AI usage credits.
+This gives you flexibility to charge for expensive services without making all features dependent on one credit balance.
+10. Integrations and API
+Create a dedicated integration center.
+Integration	Purpose
+Gmail	Mailbox connection
+Microsoft 365	Mailbox connection
+Google Sheets	Contact import/export
+HubSpot	CRM synchronization
+Pipedrive	Sales pipeline synchronization
+Zapier	Workflow automation
+Make	Workflow automation
+Calendly	Meeting scheduling
+Gemini	AI writing and research
+Amazon SES	Email delivery
+Stripe	Payments
+Public API
+Create REST API endpoints such as:
+POST   /api/v1/auth/login
+GET    /api/v1/contacts
+POST   /api/v1/contacts
+POST   /api/v1/contacts/import
+POST   /api/v1/email/find
+POST   /api/v1/email/verify
+GET    /api/v1/campaigns
+POST   /api/v1/campaigns
+POST   /api/v1/campaigns/{id}/launch
+POST   /api/v1/campaigns/{id}/pause
+GET    /api/v1/analytics
+GET    /api/v1/credits
+GET    /api/v1/integrations
+Include authentication, rate limits, request validation, tenant permissions, API documentation and webhooks.
+Snov.io itself documents APIs for lead discovery, enrichment, verification, sender accounts, warm-up, campaigns and analytics. This is a useful benchmark for IDLSender's API scope. 
+Snov.io+1
+11. Google AI Studio – Development instructions
+Now let's turn this blueprint into an actual development project.
+Open:
+Google AI Studio
+Build Mode
+I recommend building IDLSender in separate stages rather than asking Gemini to generate the entire SaaS platform in one attempt.
+Stage 1 – Main master prompt
+Copy the following prompt into Google AI Studio Build Mode.
+PROJECT: IDLSender – Complete Email Marketing SaaS Platform
+Act as a senior SaaS software architect, Laravel developer, UI/UX designer, database engineer and email marketing automation specialist.
+Build a professional SaaS platform named IDLSender, inspired by the publicly available functionality of Snov.io.
+1. Product identity
+Product name: IDLSender
+Application name: IDLSender App
+Website: https://idlfx.com/idlsender  
+Customer dashboard: https://idlfx.com/idlsender  
+Admin dashboard: https://idlfx.com/admin-idlsender 
+Tagline: Find Leads. Verify Emails. Automate Your Growth.
+Create original branding and a premium SaaS design.
+2. Technology requirements
+Production backend:
+•	PHP Laravel
+•	MySQL
+•	Laravel REST API
+•	Laravel Sanctum
+•	Redis
+•	Laravel Queues
+•	Laravel Reverb
+Web frontend:
+•	Responsive desktop and mobile interface
+•	React or Laravel Blade + Livewire
+•	Tailwind CSS
+•	Modern reusable components
+Android application:
+•	Kotlin
+•	Jetpack Compose
+•	Connect to the same Laravel REST API
+Use Google Gemini API for AI features.
+IMPORTANT: Google AI Studio may generate React and Node.js code for its own full-stack environment. Treat the initial result as a UI and functional prototype. Keep the final production backend architecture Laravel + MySQL. Do not silently replace Laravel with Node.js.
+3. Main product modules
+Create the following modules:
+1.	Dashboard
+2.	Lead Finder
+3.	Domain Search
+4.	Email Finder
+5.	Email Verifier
+6.	Bulk Email Verification
+7.	Contact Management
+8.	Company Database
+9.	Contact Lists
+10.	Email Campaigns
+11.	Email Templates
+12.	Visual Automation Builder
+13.	Follow-up Automation
+14.	Email Accounts
+15.	Unified Inbox
+16.	Deliverability Center
+17.	DNS Checker
+18.	AI Email Writer
+19.	AI Lead Research
+20.	Sales CRM
+21.	Deal Management
+22.	Tasks and Reminders
+23.	Analytics and Reports
+24.	Team Management
+25.	API and Webhooks
+26.	Integrations
+27.	Billing and Subscriptions
+28.	Credit Management
+29.	Account Settings
+4. Main website
+Design a complete public SaaS website with:
+•	Professional homepage
+•	Features pages
+•	Product pages
+•	Pricing
+•	About Us
+•	Contact Us
+•	Blog
+•	Help Center
+•	API documentation
+•	Login
+•	Registration
+Create attractive hero sections, feature demonstrations, illustrations, pricing cards, FAQs and conversion-focused calls to action.
+5. Customer application
+Create a premium SaaS dashboard with:
+•	Left navigation sidebar
+•	Top navigation
+•	Search bar
+•	Notifications
+•	Profile menu
+•	Statistics cards
+•	Interactive charts
+•	Contact tables
+•	Campaign tables
+•	Filters
+•	Pagination
+•	Responsive design
+Use a consistent blue, white and dark navy color palette.
+6. Lead generation
+Allow customers to discover business contacts using authorized data providers and permitted sources.
+Implement:
+•	Person search
+•	Domain search
+•	Company search
+•	Industry filters
+•	Job title filters
+•	Location filters
+•	Bulk search
+•	Contact enrichment
+•	Save to lists
+•	CSV/XLSX export
+Include email confidence and verification statuses.
+7. Email verification
+Implement single and bulk email verification with:
+•	Syntax checks
+•	Domain checks
+•	MX checks
+•	SMTP checks where supported
+•	Disposable address detection
+•	Catch-all detection
+•	Risk classification
+•	Verification history
+8. Campaign automation
+Implement:
+•	Email campaign creation
+•	HTML editor
+•	Drag-and-drop builder
+•	Subject personalization
+•	Contact variables
+•	Sending schedules
+•	Automated follow-ups
+•	Conditional workflows
+•	A/B testing
+•	Campaign analytics
+•	Pause and resume
+Require compliant audiences and enforce unsubscribe and suppression checks.
+9. AI assistant
+Use Gemini to:
+•	Write marketing emails
+•	Generate subject lines
+•	Rewrite content
+•	Translate emails
+•	Correct grammar
+•	Personalize messages
+•	Research companies
+•	Summarize campaign results
+Keep AI API keys on the server. Require user approval before sending AI-generated messages.
+10. CRM
+Create:
+•	Contact management
+•	Companies
+•	Leads
+•	Sales pipelines
+•	Deals
+•	Tasks
+•	Notes
+•	Activity tracking
+•	Team assignments
+11. Admin dashboard
+Create a complete super-admin system to manage:
+•	Customers
+•	Organizations
+•	Plans
+•	Subscriptions
+•	Payments
+•	Credits
+•	Campaigns
+•	Email providers
+•	Data providers
+•	AI settings
+•	Support tickets
+•	CMS
+•	API keys
+•	System settings
+•	Security logs
+12. Database
+Use a normalized MySQL database with organization-level multi-tenancy.
+Create migrations, models, relationships, indexes, factories and seeders.
+Every customer-owned record must be isolated by organization ID.
+13. Security
+Implement:
+•	Secure authentication
+•	Role-based permissions
+•	Encrypted credentials
+•	Secure OAuth
+•	CSRF protection
+•	Input validation
+•	API rate limits
+•	Audit logs
+•	Data isolation
+•	GDPR-related data controls
+•	Unsubscribe and suppression enforcement
+14. Development instructions
+Do not create a static-only website.
+Do not use fake functionality or non-working buttons.
+Use real backend APIs for all production functions.
+Do not invent successful API responses.
+Create reusable components and maintainable code.
+Provide proper loading states, empty states, validation errors and success messages.
+Create a professional, production-oriented SaaS application.
+Start by generating the complete application structure, design system, public website, customer dashboard and admin dashboard. Then proceed module by module without removing existing working features.
+Stage 2 – Build the backend
+After the initial UI has been generated, submit:
+Now implement the IDLSender production backend using PHP Laravel and MySQL.
+Create the complete Laravel architecture including:
+•	Migrations
+•	Models
+•	Relationships
+•	Controllers
+•	Services
+•	Form requests
+•	API resources
+•	Middleware
+•	Authentication
+•	Organization-level multi-tenancy
+•	Role-based permissions
+•	Laravel Sanctum
+•	Redis queues
+•	Background jobs
+•	Events and listeners
+•	Notifications
+•	Scheduled tasks
+Implement actual CRUD operations for contacts, companies, lists, email verification, campaigns, campaign sequences, email accounts, CRM, tasks, billing, credits and team members.
+Create database migrations for all required tables.
+Ensure every customer can only access their organization's data.
+Build API documentation and automated tests.
+Do not replace Laravel with Node.js. Do not generate placeholder backend functions. Implement each feature with working database operations and validation.
+Stage 3 – Email infrastructure
+Build the IDLSender Email Infrastructure module.
+Integrate Amazon SES, SendGrid, Mailgun, Brevo and custom SMTP providers through a common Laravel email-provider interface.
+Implement:
+•	Sender account management
+•	Secure credential storage
+•	Email sending queues
+•	Batch processing
+•	Provider rate limits
+•	Sending schedules
+•	Delivery webhooks
+•	Bounce processing
+•	Complaint processing
+•	Unsubscribe handling
+•	Suppression lists
+•	Campaign event tracking
+•	Retry handling
+•	Automatic sending suspension when delivery health thresholds are exceeded
+Implement proper SPF, DKIM and DMARC diagnostics.
+Support marketing consent records and legally required unsubscribe functionality.
+Never bypass provider restrictions or send to suppressed recipients.
+Create a provider testing screen in the admin panel.
+Stage 4 – AI functionality
+Implement IDLSender AI Assistant using the Google Gemini API.
+Create a secure Laravel Gemini service.
+Features:
+1.	AI Email Writer
+2.	Subject Line Generator
+3.	Email Rewriter
+4.	Email Translator
+5.	Grammar Correction
+6.	Email Personalization
+7.	Company Research
+8.	Lead Enrichment Assistance
+9.	Campaign Performance Analysis
+10.	AI Follow-up Suggestions
+Create reusable prompts, structured responses, usage tracking and credit deduction.
+Keep Gemini credentials in server-side environment variables.
+Never expose API keys to browsers or mobile application source code.
+Require user confirmation before any AI-generated email is sent.
+Stage 5 – Android application
+Build IDLSender App as a native Android application using Kotlin and Jetpack Compose.
+Connect it to the existing IDLSender Laravel REST API.
+Implement:
+•	Secure login and registration
+•	Dashboard
+•	Lead Finder
+•	Contacts
+•	Email Verification
+•	Campaign Management
+•	Campaign Statistics
+•	Unified Inbox
+•	AI Email Writer
+•	Notifications
+•	Billing
+•	Account Settings
+Use secure token storage, API authentication, error handling, loading states and responsive mobile UI.
+The Android application must use the same organization, contacts, campaigns, subscriptions and permissions as the IDLSender web application.
+Do not create a separate database for mobile users.
+12. Development roadmap
+I would build this project in the following order.
+Phase	Development	Priority
+1	Branding, homepage and UI design	High
+2	Laravel backend and database	High
+3	Login, registration and SaaS tenancy	High
+4	Admin and subscription system	High
+5	Contacts, lists and imports	High
+6	Email provider integrations	High
+7	Email verification and lead finder	Medium
+8	Campaign and automation engine	High
+9	Deliverability and analytics	Medium
+10	CRM and AI assistant	Medium
+11	Integrations and API	Medium
+12	Android application	Medium
+My advice: First launch a working version with contacts, email accounts, campaigns, verification, subscriptions and admin management. Then expand into advanced prospecting, CRM, AI and mobile features. This will give you a usable commercial product much earlier.
+13. Testing and launch checklist
+Before accepting paying customers, test:
+•	 Registration and email verification.
+•	 Password recovery and two-factor authentication.
+•	 Organization data isolation.
+•	 Subscription expiry and credit deductions.
+•	 CSV import and export.
+•	 Email verification accuracy and limitations.
+•	 Campaign sending and queue recovery.
+•	 Unsubscribe and suppression handling.
+•	 Bounce and complaint webhooks.
+•	 Sender authentication and DNS diagnostics.
+•	 Mobile application API connectivity.
+•	 Admin access restrictions.
+•	 Backup and disaster recovery.
+•	 Load testing and security testing.
+14. Final product vision
+IDLSender
+Everything You Need to Grow Your Business.
+Find leads, verify contacts, automate email marketing and manage sales from one powerful platform.
+Cold Email Marketing SaaS | Campaign Page UIUX Design by FocoTik UI UX for FocoTik on Dribbble
+dribbble.com
+Lead Generation
+Email Automation
+AI Powered
+Lead Finder
+Discover prospects
+Email Verifier
+Validate addresses
+Automation
+Automate workflows
+AI Assistant
+Write smarter emails
+15. Three important decisions for IDLSender
+I have a few architectural choices to establish before writing the actual Laravel project.
+1. Production backend
+PHP Laravel + MySQL (recommended)
+Node.js + MySQL
+2. Mobile application
+Android and iOS, Android first
+Android only initially
+Responsive web app first
+3. Email sending infrastructure
+Multiple external providers + customer SMTP
+Own SMTP infrastructure
+Both own and external infrastructure
+4. Development scope
+Complete Snov.io-inspired SaaS
+MVP first, then advanced modules
+Confirm IDLSender architecture
+My suggested starting configuration is Laravel + MySQL, Android first, multiple external email providers, and an MVP followed by advanced modules.
+Once these decisions are established, the next practical step is to create the actual Laravel folder structure, database schema, admin panel and first working IDLSender dashboard.

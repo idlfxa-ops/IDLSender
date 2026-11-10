@@ -32,10 +32,13 @@ interface TemplatesViewProps {
 
 const CATEGORIES: ('All' | TemplateCategory)[] = [
   'All',
+  'AI Cold Outreach',
+  'Client Onboarding',
   'Product Update',
   'Newsletter',
   'Sales Outreach',
-  'Onboarding',
+  'Retainer & SEO',
+  'Transactional',
 ];
 
 export const TemplatesView: React.FC<TemplatesViewProps> = ({

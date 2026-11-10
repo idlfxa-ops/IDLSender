@@ -96,8 +96,17 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
   const [runnerLogs, setRunnerLogs] = useState<EmailDispatchLog[]>([]);
 
   // Calculate target contacts based on audience filter
-  const getTargetContacts = (audienceType: 'all' | 'tag' | 'status', tag?: string, status?: ContactStatus) => {
+  const getTargetContacts = (
+    audienceType: Campaign['audienceType'] = 'all',
+    tag?: string,
+    status?: ContactStatus,
+    region?: any,
+    onboardingStatus?: any
+  ) => {
     return contacts.filter((c) => {
+      if (status !== 'unsubscribed' && c.status === 'unsubscribed') {
+        return false;
+      }
       if (audienceType === 'all') {
         return c.status === 'subscribed';
       }
@@ -107,14 +116,22 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
       if (audienceType === 'status' && status) {
         return c.status === status;
       }
-      return true;
+      if (audienceType === 'region' && region) {
+        return c.region === region && c.status === 'subscribed';
+      }
+      if (audienceType === 'onboarding' && onboardingStatus) {
+        return c.onboardingStatus === onboardingStatus && c.status === 'subscribed';
+      }
+      return c.status === 'subscribed';
     });
   };
 
   const targetContacts = getTargetContacts(
     draftCampaign.audienceType || 'all',
     draftCampaign.selectedTag,
-    draftCampaign.selectedStatus
+    draftCampaign.selectedStatus,
+    draftCampaign.selectedRegion,
+    draftCampaign.selectedOnboardingStatus
   );
 
   // Available unique tags from contacts
@@ -279,7 +296,9 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
       const recipients = getTargetContacts(
         current.audienceType,
         current.selectedTag,
-        current.selectedStatus
+        current.selectedStatus,
+        current.selectedRegion,
+        current.selectedOnboardingStatus
       );
 
       const sentSoFar = current.stats.sent;
@@ -497,9 +516,21 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
     };
   }, [activeRunningCampaign?.id, activeRunningCampaign?.status, activeRunningCampaign?.stats.sent]);
 
-  const filteredCampaigns = campaigns.filter(
-    (c) => filterStatus === 'all' || c.status === filterStatus
-  );
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  const filteredCampaigns = campaigns.filter((c) => {
+    const statusMatch = filterStatus === 'all' || c.status === filterStatus;
+    const queryMatch =
+      searchQuery.trim() === '' ||
+      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.subject.toLowerCase().includes(searchQuery.toLowerCase());
+    return statusMatch && queryMatch;
+  });
+
+  const totalPages = Math.ceil(filteredCampaigns.length / pageSize) || 1;
+  const paginatedCampaigns = filteredCampaigns.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -625,11 +656,17 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
       {/* Header and Filter Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="px-2 py-0.5 text-xs font-semibold rounded-md bg-sky-100 text-sky-800 uppercase tracking-wider">
+              Bulk Dispatch Hub
+            </span>
+            <span className="text-xs text-slate-500 font-mono">{campaigns.length} Total Campaigns</span>
+          </div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-            Bulk Campaigns
+            Campaign Broadcasts & Telemetry
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Design, schedule, throttle, and dispatch personalized bulk email broadcasts.
+            Design, schedule, throttle, and dispatch personalized bulk email broadcasts. Unsubscribed recipients are automatically excluded.
           </p>
         </div>
 
@@ -642,21 +679,39 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
         </button>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg w-fit">
-        {['all', 'sending', 'completed', 'draft'].map((status) => (
-          <button
-            key={status}
-            onClick={() => setFilterStatus(status)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors capitalize ${
-              filterStatus === status
-                ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            {status}
-          </button>
-        ))}
+      {/* Search & Filter Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
+        <div className="flex flex-wrap items-center gap-2">
+          {['all', 'completed', 'sending', 'draft', 'paused'].map((status) => (
+            <button
+              key={status}
+              onClick={() => {
+                setFilterStatus(status);
+                setCurrentPage(1);
+              }}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors capitalize ${
+                filterStatus === status
+                  ? 'bg-slate-900 text-white font-semibold shadow-2xs'
+                  : 'bg-slate-100 text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              {status}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Search 50+ campaigns..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="text-xs border border-slate-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-sky-500 focus:outline-none w-56"
+          />
+        </div>
       </div>
 
       {/* Campaigns Table */}
@@ -676,7 +731,7 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredCampaigns.map((camp) => {
+              {paginatedCampaigns.map((camp) => {
                 const rates = calculateRates(camp.stats);
                 return (
                   <tr key={camp.id} className="hover:bg-slate-50 transition-colors">
@@ -751,6 +806,35 @@ export const CampaignsView: React.FC<CampaignsViewProps> = ({
               })}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Bar */}
+        <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+          <div>
+            Showing <span className="font-semibold text-slate-800">{Math.min(filteredCampaigns.length, (currentPage - 1) * pageSize + 1)}</span> to{' '}
+            <span className="font-semibold text-slate-800">{Math.min(filteredCampaigns.length, currentPage * pageSize)}</span> of{' '}
+            <span className="font-semibold text-slate-800">{filteredCampaigns.length}</span> campaigns
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-40 font-medium"
+            >
+              Previous
+            </button>
+            <span className="px-2 text-slate-600 font-mono">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-40 font-medium"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
